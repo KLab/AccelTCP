@@ -1,3 +1,6 @@
+# Program files
+acceltcp
+
 # Object files
 *.o
 *.ko
