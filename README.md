@@ -48,8 +48,8 @@ Example
 ===
 ***Server side proxy***
 
-    [user@10.10.0.100]$ acceltcp -- --server --ssl-accept --ssl-connect 40381:133.242.5.116:443
+    [user@10.10.0.100]$ ./acceltcp -- --server --ssl-accept --ssl-connect 40381:133.242.5.116:443
 
 ***Client side proxy***
 
-    [user@10.10.0.200]$ acceltcp -- --http --http-host=www.klab.com --ssl-accept --ssl-connect 8443:10.10.0.100:40381
+    [user@10.10.0.200]$ ./acceltcp -- --http --http-host=www.klab.com --ssl-accept --ssl-connect 8443:10.10.0.100:40381
