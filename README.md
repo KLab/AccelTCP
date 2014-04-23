@@ -52,4 +52,4 @@ Example
 
 ***Client side proxy***
 
-    [user@10.10.0.200]$ ./acceltcp -- --http --http-host=www.klab.com --ssl-accept --ssl-connect 8443:10.10.0.100:40381
+    [user@10.10.0.200]$ ./acceltcp -- --http --http-host=www.klab.com --connection-num=100 --ssl-accept --ssl-connect 8443:10.10.0.100:40381

@@ -757,29 +757,29 @@ static void
 usage (void) {
     printf("usage: %s [options] -- [tunnel_options] tunnel\n", APP_NAME);
     printf("  Options:\n");
-    printf("    -d, --debug                #\n");
-    printf("    -h, --help                 #\n");
-    printf("    -q, --quiet                #\n");
-    printf("    -v, --verbose              #\n");
-    printf("    -V, --version              #\n");
+    printf("    -d, --debug                # debug mode\n");
+    printf("    -h, --help                 # show this message\n");
+    printf("    -q, --quiet                # quiet mode\n");
+    printf("    -v, --verbose              # verbose mode\n");
+    printf("    -V, --version              # show version\n");
     printf("  Tunnel Options:\n");
-    printf("    -4, --ipv4only             #\n");
-    printf("    -6, --ipv6only             #\n");
-    printf("        --connection-num=num   # default: 0\n");
-    printf("        --http                 #\n");
-    printf("        --http-host=host       #\n");
-    printf("        --rbuf=size            #\n");
-    printf("        --sbuf=size            #\n");
-    printf("        --server               #\n");
-    printf("        --ssl-accept           #\n");
-    printf("        --ssl-certificate=file # default: ./server.crt\n");
-    printf("        --ssl-privatekey=file  # default: ./server.key\n");
-    printf("        --ssl-connect          #\n");
+    printf("    -4, --ipv4only             # IPv4 only\n");
+    printf("    -6, --ipv6only             # IPv6 only\n");
+    printf("        --connection-num=num   # connection pool num (default: 0)\n");
+    printf("        --http                 # enable http mode\n");
+    printf("        --http-host=host       # http HOST header value\n");
+    printf("        --rbuf=size            # recieve socket buffer (default: system default)\n");
+    printf("        --sbuf=size            # send socket buffer (default: system default)\n");
+    printf("        --server               # enable server mode\n");
+    printf("        --ssl-accept           # enable SSL accept\n");
+    printf("        --ssl-certificate=file # SSL certificate file (default: ./server.crt)\n");
+    printf("        --ssl-privatekey=file  # SSL private-key file (default: ./server.key)\n");
+    printf("        --ssl-connect          # enable SSL connect\n");
     printf("  Tunnel: (addr and port is numeric only)\n");
     printf("    [local_addr:]local_port:remote_addr:remote_port\n");
     printf("  Example:\n");
-    printf("    %s -- --server --ssl-accept --ssl-connect 40381:133.242.5.116:443\n", APP_NAME);
-    printf("    %s -- --ssl-accept --ssl-connect --http --http-host=www.klab.com --connection-num=100 8443:10.10.0.100:40381\n", APP_NAME);
+    printf("    [user@10.10.0.100]$ %s -- --server --ssl-accept --ssl-connect 40381:133.242.5.116:443\n", APP_NAME);
+    printf("    [user@10.10.0.200]$ %s -- --http --http-host=www.klab.com --connection-num=100 --ssl-accept --ssl-connect 8443:10.10.0.100:40381\n", APP_NAME);
 }
 
 static void
