@@ -268,6 +268,18 @@ sockaddr_ntop (const struct sockaddr *sa, char *buf, socklen_t size) {
     }
 }
 
+unsigned short
+sockaddr_port (const struct sockaddr *sa) {
+    switch (sa->sa_family) {
+    case AF_INET:
+        return ((struct sockaddr_in *)sa)->sin_port;
+    case AF_INET6:
+        return ((struct sockaddr_in6 *)sa)->sin6_port;
+    default:
+        return 0;
+    }
+}
+
 static void
 econn_destroy_cb (void *arg) {
     struct econn *e;
@@ -392,6 +404,8 @@ static int
 econn_accept_cb (struct evsock *sock) {
     struct econn *e;
     int opt;
+    char addr[INET6_ADDRSTRLEN + 1];
+    unsigned short port;
     static uint32_t xid = 0;
 
     DEBUG("[%10.3f] econn_accept_cb\n", ev_now(sock->loop));
@@ -423,10 +437,13 @@ econn_accept_cb (struct evsock *sock) {
         perror("setsockopt");
         return -1;
     }
+    sockaddr_ntop((struct sockaddr *)&e->sock.peer, addr, sizeof(addr));
+    port = sockaddr_port((struct sockaddr *)&e->sock.peer);
+    DEBUG("peer: addr=%s, port=%u\n", addr, port);
     if (e->tunnel->config->http) {
         http_parser_init(&e->http.parser, HTTP_REQUEST);
         e->http.parser.data = &e->http.env;
-        sockaddr_ntop((struct sockaddr *)&e->sock.peer, e->http.env.client, sizeof(e->http.env.client));
+        strncpy(e->http.env.client, addr, sizeof(e->http.env.client));
         e->http.env.host = e->tunnel->config->http_host;
         e->http.env.buf = &e->session->e2p.buf;
     }

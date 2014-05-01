@@ -123,6 +123,7 @@ evsock_accept_handler (struct evsock *sock) {
         if (!nsock) {
             return;
         }
+        nsock->peerlen = sizeof(nsock->peer);
         nsock->fd = accept(sock->fd, (struct sockaddr *)&nsock->peer, &nsock->peerlen);
         if (nsock->fd == -1) {
             perror("accept");
