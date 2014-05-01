@@ -23,8 +23,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef _BUFFER_H_
-#define _BUFFER_H_
+#ifndef BUFFER_H
+#define BUFFER_H
 
 #include <stddef.h>
 

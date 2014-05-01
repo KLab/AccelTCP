@@ -23,8 +23,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef _HTTP_HANDLER_H_
-#define _HTTP_HANDLER_H_
+#ifndef HTTP_HANDLER_H
+#define HTTP_HANDLER_H
 
 #include "buffer.h"
 #include "http_parser.h"

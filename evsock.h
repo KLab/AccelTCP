@@ -23,8 +23,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef _EVSOCK_H_
-#define _EVSOCK_H_
+#ifndef EVSOCK_H
+#define EVSOCK_H
 
 #include <stddef.h>
 #include <sys/types.h>
