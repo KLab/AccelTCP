@@ -1381,7 +1381,7 @@ tunnel_setup (struct ev_loop *loop, struct config_tunnel *c) {
 }
 
 static void
-timeout_cb (struct ev_loop *loop, struct ev_timer *w, int revents) {
+print_pconn_status (void) {
     struct tunnel *t;
     struct pconn *p;
     size_t count, active, used;
@@ -1401,10 +1401,21 @@ timeout_cb (struct ev_loop *loop, struct ev_timer *w, int revents) {
     }
 }
 
+static void
+timeout_cb (struct ev_loop *loop, struct ev_timer *w, int revents) {
+    print_pconn_status();
+}
+
+static void
+signal_cb (struct ev_loop *loop, struct ev_signal *w, int revents) {
+    print_pconn_status();
+}
+
 int
 main (int argc, char *argv[]) {
     struct sigaction sig; 
     struct ev_loop *loop;
+    struct ev_signal signal_w;
     struct ev_timer timer_w;
     struct config_tunnel *c;
     struct tunnel *t;
@@ -1426,8 +1437,12 @@ main (int argc, char *argv[]) {
     if (!loop) {
         return -1;
     }
-    ev_timer_init(&timer_w, timeout_cb, 0.0, 1.0);
-    ev_timer_start(loop, &timer_w);
+    ev_signal_init(&signal_w, signal_cb, SIGUSR1);
+    ev_signal_start(loop, &signal_w);
+    if (!config.quiet) {
+        ev_timer_init(&timer_w, timeout_cb, 0.0, 1.0);
+        ev_timer_start(loop, &timer_w);
+    }
     SSL_load_error_strings();
     SSL_library_init();
     RAND_poll();
