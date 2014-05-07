@@ -48,7 +48,7 @@
 
 #define APP_NAME "acceltcp"
 #define APP_DESCRIPTION "ACCELerate TCP proxy"
-#define APP_VERSION "0.1"
+#define APP_VERSION "0.2"
 #define APP_AUTHOR "Masaya YAMAMOTO <yamamoto-ma@klab.com>"
 
 #define DEFAULT_SSL_CERITIFICATE_FILE "server.crt"
@@ -241,6 +241,36 @@ getclientsock (int family, const char *node, const char *service) {
             perror("setsockopt");
             close(fd);
             return -1;
+        }
+#ifndef TCP_KEEPIDLE
+        opt = ACCELTCP_TCP_KEEPIDLE;
+#else
+        opt = 1;
+#endif
+        if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
+            perror("setsockopt");
+            close(fd);
+            break;
+        }
+#ifdef TCP_KEEPIDLE
+        opt = ACCELTCP_TCP_KEEPIDLE;
+        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &opt, sizeof(opt)) == -1) {
+            perror("setsockopt");
+            close(fd);
+            break;
+        }
+#endif
+        opt = ACCELTCP_TCP_KEEPINTVL;
+        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &opt, sizeof(opt)) == -1) {
+            perror("setsockopt");
+            close(fd);
+            break;
+        }
+        opt = ACCELTCP_TCP_KEEPCNT;
+        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &opt, sizeof(opt)) == -1) {
+            perror("setsockopt");
+            close(fd);
+            break;
         }
         if (connect(fd, ai->ai_addr, ai->ai_addrlen) == -1) {
             if (errno != EINPROGRESS) {
@@ -1284,36 +1314,6 @@ tunnel_setup_pconns (struct ev_loop *loop, struct tunnel *tunnel) {
 #ifdef SO_SNDBUFFORCE
             }
 #endif
-        }
-#ifndef TCP_KEEPIDLE
-        opt = ACCELTCP_TCP_KEEPIDLE;
-#else
-        opt = 1;
-#endif
-        if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
-            perror("setsockopt");
-            close(fd);
-            break;
-        }
-#ifdef TCP_KEEPIDLE
-        opt = ACCELTCP_TCP_KEEPIDLE;
-        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &opt, sizeof(opt)) == -1) {
-            perror("setsockopt");
-            close(fd);
-            break;
-        }
-#endif
-        opt = ACCELTCP_TCP_KEEPINTVL;
-        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &opt, sizeof(opt)) == -1) {
-            perror("setsockopt");
-            close(fd);
-            break;
-        }
-        opt = ACCELTCP_TCP_KEEPCNT;
-        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &opt, sizeof(opt)) == -1) {
-            perror("setsockopt");
-            close(fd);
-            break;
         }
         p = calloc(1, sizeof(*p));
         if (!p) {
