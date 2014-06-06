@@ -24,3 +24,11 @@ acceltcp
 *.i*86
 *.x86_64
 *.hex
+
+
+## https://raw.githubusercontent.com/github/gitignore/master/CMake.gitignore
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
