@@ -1,6 +1,7 @@
 project(acceltcp)
 cmake_minimum_required(VERSION 2.6.2)
-include_directories(~/include /usr/local/include /usr/include)
+include_directories(/usr/local/include /usr/include)
+link_directories(/usr/local/lib /usr/lib)
 
 set(acceltcp_srcs acceltcp.c evsock.c http_handler.c http_parser.c)
 add_executable(acceltcp ${acceltcp_srcs})
