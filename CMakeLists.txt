@@ -8,3 +8,6 @@ add_executable(acceltcp ${acceltcp_srcs})
 target_link_libraries(acceltcp ev)
 target_link_libraries(acceltcp ssl)
 target_link_libraries(acceltcp crypto)
+
+add_subdirectory(gtest-1.7.0)
+add_subdirectory(test)
