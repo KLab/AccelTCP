@@ -23,159 +23,10 @@
  * THE SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <getopt.h>
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <signal.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/tcp.h>
-#include <openssl/crypto.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
-#include <ev.h>
-#include "evsock.h"
-#include "http_handler.h"
+#include "acceltcp.h"
 
-#define APP_NAME "acceltcp"
-#define APP_DESCRIPTION "ACCELerate TCP proxy"
-#define APP_VERSION "0.2"
-#define APP_AUTHOR "Masaya YAMAMOTO <yamamoto-ma@klab.com>"
-
-#define DEFAULT_SSL_CERITIFICATE_FILE "server.crt"
-#define DEFAULT_SSL_PRIVATEKEY_FILE "server.key"
-
-#ifndef SOL_TCP
-#define SOL_TCP IPPROTO_TCP
-#endif
-
-#define ACCELTCP_TCP_KEEPIDLE  90
-#define ACCELTCP_TCP_KEEPINTVL 30
-#define ACCELTCP_TCP_KEEPCNT    6
-
-#define ACCELTCP_HDR_MAGIC   0xacce1381
-#define ACCELTCP_HDR_FLG_SYN 0x0100
-#define ACCELTCP_HDR_FLG_FIN 0x0200
-#define ACCELTCP_HDR_FLG_RST 0x0300
-
-#define DEBUG(fmt, ...) \
-    do { \
-        if (config.debug) { \
-            fprintf(stderr, fmt, ## __VA_ARGS__); \
-        } \
-    } while (0);
-
-#define STRSAFEPRINT(x) ((x) ? (x) : "")
-
-#ifndef MIN
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#endif
-#ifndef MAX
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-#endif
-
-#define BACKLOG 1024
-
-struct hdr {
-    uint32_t ___;
-    uint32_t xid;
-    uint16_t flg;
-    uint16_t len;
-};
-
-#define HDR_LEN (sizeof(struct hdr))
-
-struct config_tunnel {
-    int ipv4only;
-    int ipv6only;
-    int http;
-    char *http_host;
-    int server;
-    int ssl_accept;
-    char *ssl_certificate;
-    char *ssl_privatekey;
-    int ssl_connect;
-    int rbuf;
-    int sbuf;
-    int connection_num;
-    char *self_addr;
-    char *self_port;
-    char *peer_addr;
-    char *peer_port;
-    struct config_tunnel *next;
-};
-
-struct config {
-    int debug;
-    int quiet;
-    int verbose;
-    struct config_tunnel *tunnels;
-};
-
-struct ssock {
-    struct evsock sock;
-    struct tunnel *tunnel;
-    struct ssock *next;
-};
-
-struct econn {
-    struct evsock sock;
-    struct {
-        http_parser parser;
-        struct http_handler_env env;
-    } http;
-    struct tunnel *tunnel;
-    struct session *session;
-    struct econn *next;
-};
-
-struct pconn {
-    int ready;
-    struct evsock sock;
-    struct tunnel *tunnel;
-    struct session *session;
-    struct pconn *next;
-};
-
-struct session {
-    uint32_t xid;
-    struct {
-        int closed;
-        struct buffer buf;
-        size_t bytes;
-    } e2p;
-    struct {
-        int closed;
-        struct buffer buf;
-        size_t bytes;
-    } p2e;
-    struct econn *econn;
-    struct pconn *pconn;
-};
-
-struct tunnel {
-    int id;
-    struct {
-        SSL_CTX *server_ctx;
-        SSL_CTX *client_ctx;
-    } ssl;
-    struct config_tunnel *config;
-    struct ssock *ssocks;
-    struct pconn *pconns;
-    struct tunnel *next;
-};
-
-static struct config config;
-static struct tunnel *tunnels;
+struct config config;
+struct tunnel *tunnels;
 
 void
 hexdump (FILE *fp, void *data, size_t size) {
@@ -800,7 +651,7 @@ pconn_pre_accept_cb (struct evsock *sock) {
     return &p->sock;
 }
 
-static void
+void
 usage (void) {
     printf("usage: %s [options] -- [tunnel_options] tunnel\n", APP_NAME);
     printf("  Options:\n");
@@ -882,7 +733,7 @@ strisdigit (const char *s) {
     return 1;
 }
 
-static int
+int
 option_parse_tunnel (char *s, struct config_tunnel *c) {
     char *p, *t[4];
     size_t n;
@@ -921,7 +772,7 @@ option_parse_tunnel (char *s, struct config_tunnel *c) {
     return 0;
 }
 
-static int
+int
 option_parse (int argc, char *argv[], struct config *config) {
     int opt;
     struct config_tunnel *c;
@@ -1069,7 +920,7 @@ option_parse (int argc, char *argv[], struct config *config) {
     return 0;
 }
 
-static void
+void
 config_debug (struct config *config) {
     struct config_tunnel *c;
 
@@ -1342,7 +1193,7 @@ tunnel_setup_pconns (struct ev_loop *loop, struct tunnel *tunnel) {
     return count;
 }
 
-static struct tunnel *
+struct tunnel *
 tunnel_setup (struct ev_loop *loop, struct config_tunnel *c) {
     struct tunnel *tunnel;
     int ret;
@@ -1418,85 +1269,12 @@ print_pconn_status (void) {
     }
 }
 
-static void
+void
 timeout_cb (struct ev_loop *loop, struct ev_timer *w, int revents) {
     print_pconn_status();
 }
 
-static void
+void
 signal_cb (struct ev_loop *loop, struct ev_signal *w, int revents) {
     print_pconn_status();
-}
-
-int
-main (int argc, char *argv[]) {
-    struct sigaction sig; 
-    struct ev_loop *loop;
-    struct ev_signal signal_w;
-    struct ev_timer timer_w;
-    struct config_tunnel *c;
-    struct tunnel *t;
-    struct ssock *s;
-    struct pconn *p;
-
-    sig.sa_handler = SIG_IGN;
-    sigemptyset(&sig.sa_mask);
-    sig.sa_flags= 0;
-    sigaction(SIGPIPE, &sig, NULL);
-    if (option_parse(argc, argv, &config) == -1) {
-        usage();
-        return -1;
-    }
-    if (config.debug) {
-        config_debug(&config);
-    }
-    loop = ev_loop_new(0);
-    if (!loop) {
-        return -1;
-    }
-    ev_signal_init(&signal_w, signal_cb, SIGUSR1);
-    ev_signal_start(loop, &signal_w);
-    if (!config.quiet) {
-        ev_timer_init(&timer_w, timeout_cb, 0.0, 1.0);
-        ev_timer_start(loop, &timer_w);
-    }
-    SSL_load_error_strings();
-    SSL_library_init();
-    RAND_poll();
-    if (!RAND_status()) {
-        srand(time(NULL));
-        do {
-            unsigned short r = (u_short)rand();
-            RAND_seed(&r, sizeof(r));
-        } while (!RAND_status());
-    }
-    for (c = config.tunnels; c; c = c->next) {
-        t = tunnel_setup(loop, c);
-        if (!t) {
-            return -1;
-        }
-        t->next = tunnels;
-        tunnels = t;
-    }
-    for (t = tunnels; t; t = t->next) {
-        for (s = t->ssocks; s; s = s->next) {
-            if (listen(s->sock.fd, BACKLOG) == -1) {
-                perror("listen");
-                return -1;
-            }
-            ev_io_start(s->sock.loop, &s->sock.w);
-        }
-        for (p = t->pconns; p; p = p->next) {
-            if (connect(p->sock.fd, (struct sockaddr *)&p->sock.peer, p->sock.peerlen) == -1) {
-                if (errno != EINPROGRESS) {
-                    perror("connect");
-                    return -1;
-                }
-            }
-            ev_io_start(p->sock.loop, &p->sock.w);
-        }
-    }
-    ev_loop(loop, 0);
-    ev_loop_destroy(loop);
-    return 0;
 }
