@@ -807,8 +807,8 @@ option_parse (int argc, char *argv[], struct config *config) {
             config->debug = 1;
             break;
         case 'h':
-            usage();
-            exit(EXIT_SUCCESS);
+	        usage();
+            return -2;
         case 'q':
             config->quiet = 1;
             break;
@@ -817,7 +817,7 @@ option_parse (int argc, char *argv[], struct config *config) {
             break;
         case 'V':
             version();
-            exit(EXIT_SUCCESS);
+            return -2;
         default:
             return -1;
         }
@@ -920,7 +920,7 @@ option_parse (int argc, char *argv[], struct config *config) {
     return 0;
 }
 
-void
+static void
 config_debug (struct config *config) {
     struct config_tunnel *c;
 
@@ -1277,4 +1277,81 @@ timeout_cb (struct ev_loop *loop, struct ev_timer *w, int revents) {
 void
 signal_cb (struct ev_loop *loop, struct ev_signal *w, int revents) {
     print_pconn_status();
+}
+
+int
+acceltcp (int argc, char *argv[]) {
+    struct sigaction sig; 
+    struct ev_loop *loop;
+    struct ev_signal signal_w;
+    struct ev_timer timer_w;
+    struct config_tunnel *c;
+    struct tunnel *t;
+    struct ssock *s;
+    struct pconn *p;
+
+    sig.sa_handler = SIG_IGN;
+    sigemptyset(&sig.sa_mask);
+    sig.sa_flags= 0;
+    sigaction(SIGPIPE, &sig, NULL);
+    int option_parse_status = option_parse(argc, argv, &config);
+    if (option_parse_status != 0) {
+	    if (option_parse_status == -2) {
+		    return EXIT_SUCCESS;
+        }
+		usage();
+        return -1;
+    }
+    if (config.debug) {
+        config_debug(&config);
+    }
+    loop = ev_loop_new(0);
+    if (!loop) {
+        return -1;
+    }
+    ev_signal_init(&signal_w, signal_cb, SIGUSR1);
+    ev_signal_start(loop, &signal_w);
+    if (!config.quiet) {
+        ev_timer_init(&timer_w, timeout_cb, 0.0, 1.0);
+        ev_timer_start(loop, &timer_w);
+    }
+    SSL_load_error_strings();
+    SSL_library_init();
+    RAND_poll();
+    if (!RAND_status()) {
+        srand(time(NULL));
+        do {
+            unsigned short r = (u_short)rand();
+            RAND_seed(&r, sizeof(r));
+        } while (!RAND_status());
+    }
+    for (c = config.tunnels; c; c = c->next) {
+        t = tunnel_setup(loop, c);
+        if (!t) {
+            return -1;
+        }
+        t->next = tunnels;
+        tunnels = t;
+    }
+    for (t = tunnels; t; t = t->next) {
+        for (s = t->ssocks; s; s = s->next) {
+            if (listen(s->sock.fd, BACKLOG) == -1) {
+                perror("listen");
+                return -1;
+            }
+            ev_io_start(s->sock.loop, &s->sock.w);
+        }
+        for (p = t->pconns; p; p = p->next) {
+            if (connect(p->sock.fd, (struct sockaddr *)&p->sock.peer, p->sock.peerlen) == -1) {
+                if (errno != EINPROGRESS) {
+                    perror("connect");
+                    return -1;
+                }
+            }
+            ev_io_start(p->sock.loop, &p->sock.w);
+        }
+    }
+    ev_loop(loop, 0);
+    ev_loop_destroy(loop);
+    return 0;
 }

@@ -191,9 +191,6 @@ option_parse_tunnel (char *s, struct config_tunnel *c);
 extern int
 option_parse (int argc, char *argv[], struct config *config);
 
-extern void
-config_debug (struct config *config);
-
 extern struct tunnel *
 tunnel_setup (struct ev_loop *loop, struct config_tunnel *c);
 
@@ -202,6 +199,9 @@ timeout_cb (struct ev_loop *loop, struct ev_timer *w, int revents);
 
 extern void
 signal_cb (struct ev_loop *loop, struct ev_signal *w, int revents);
+
+extern int
+acceltcp (int argc, char *argv[]);
 
 #ifdef __cplusplus
 }
