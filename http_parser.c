@@ -575,6 +575,16 @@ size_t http_parser_execute (http_parser *parser,
                             const char *data,
                             size_t len)
 {
+  if (parser == NULL) {
+    return 0;
+  }
+  if (settings == NULL) {
+    return 0;
+  }
+  if (data == NULL) {
+    return 0;
+  }
+  
   char c, ch;
   int8_t unhex_val;
   const char *p = data;
@@ -1950,6 +1960,10 @@ http_method_str (enum http_method m)
 void
 http_parser_init (http_parser *parser, enum http_parser_type t)
 {
+  if (parser == NULL) {
+    return;
+  }
+
   void *data = parser->data; /* preserve application data */
   memset(parser, 0, sizeof(*parser));
   parser->data = data;
