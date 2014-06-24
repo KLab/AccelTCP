@@ -58,6 +58,10 @@
 
 void
 evsock_suspend (struct evsock *sock, int how) {
+    if (sock == NULL) {
+        return;
+    }
+
     if (how & EVSOCK_HOW_RX) {
         sock->rx.suspend = 1;
     }
@@ -69,6 +73,10 @@ evsock_suspend (struct evsock *sock, int how) {
 
 void
 evsock_wakeup (struct evsock *sock, int how) {
+    if (sock == NULL) {
+        return;
+    }
+
     if (how & EVSOCK_HOW_RX) {
         sock->rx.suspend = 0;
     }
@@ -525,6 +533,13 @@ evsock_write_handler (struct evsock *sock) {
 
 void
 evsock_handler (struct ev_loop *loop, struct ev_io *w, int revents) {
+    if (loop == NULL) {
+        return;
+    }
+    if (w == NULL) {
+        return;
+    }
+    
     struct evsock *sock;
 
     (void)loop;
