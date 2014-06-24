@@ -275,14 +275,16 @@ struct http_parser_url {
  */
 unsigned long http_parser_version(void);
 
-void http_parser_init(http_parser *parser, enum http_parser_type type);
+extern void
+http_parser_init(http_parser *parser, enum http_parser_type type);
 
 
-size_t http_parser_execute(http_parser *parser,
-                           const http_parser_settings *settings,
-                           const char *data,
-                           size_t len);
-
+extern size_t
+http_parser_execute(http_parser *parser,
+		    const http_parser_settings *settings,
+		    const char *data,
+		    size_t len);
+  
 
 /* If http_should_keep_alive() in the on_headers_complete or
  * on_message_complete callback returns 0, then this should be
