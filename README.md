@@ -13,9 +13,10 @@ Build
 ***Build program***
 
     $ cd AccelTCP
+    $ cmake .
     $ make
 
-Note: This program requires OpenSSL libraries and libev.
+Note: This program requires OpenSSL libraries and libev and CMake.
 
 Note: This program has been tested with Linux (kernel 2.6.32) and Mac OSX (10.9.2)
 
